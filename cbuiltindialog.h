@@ -4,6 +4,7 @@
 #include <QDialog>
 #include<QPushButton>
 #include<QTextEdit>
+#include<QtWidgets>
 
 class CBuiltinDialog : public QDialog
 {
@@ -23,5 +24,7 @@ private:
     QPushButton *pagePushBtn;
     QPushButton *progressPushBtn;
     QPushButton *printPushBtn;
+private slots :
+    void doPushBtn();
 };
 #endif // CBUILTINDIALOG_H
