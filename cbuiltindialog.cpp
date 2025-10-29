@@ -1,4 +1,7 @@
 #include "cbuiltindialog.h"
+#include <QtPrintSupport/QPrinter>
+#include <QtPrintSupport/QPageSetupDialog>
+#include <QtPrintSupport/QPrintDialog>
 
 CBuiltinDialog::CBuiltinDialog(QWidget *parent)
     : QDialog(parent)
@@ -13,8 +16,18 @@ CBuiltinDialog::CBuiltinDialog(QWidget *parent)
     pagePushBtn     = new QPushButton(QStringLiteral("頁面設定對話盒"));
     progressPushBtn = new QPushButton(QStringLiteral("進度對話盒"));
     printPushBtn    = new QPushButton(QStringLiteral("列印對話盒"));
+    textColorPushBtn = new QPushButton(QStringLiteral("設定文字顏色"));
 
-
+    gridLayout->addWidget(colorPushBtn,0,0,1,1);
+    gridLayout->addWidget(errorPushBtn,0,1,1,1);
+    gridLayout->addWidget(filePushBtn,0,2,1,1);
+    gridLayout->addWidget(fontPushBtn,1,0,1,1);
+    gridLayout->addWidget(inputPushBtn,1,1,1,1);
+    gridLayout->addWidget(pagePushBtn,1,2,1,1);
+    gridLayout->addWidget(progressPushBtn,2,0,1,1);
+    gridLayout->addWidget(printPushBtn,2,1,1,1);
+    gridLayout->addWidget(textColorPushBtn, 2, 2, 1, 1);
+    gridLayout->addWidget(displayTextEdit,3,0,3,3);
 
     setLayout(gridLayout);
     setWindowTitle(QStringLiteral("內建對話盒顯示"));
@@ -27,11 +40,11 @@ CBuiltinDialog::CBuiltinDialog(QWidget *parent)
     connect(inputPushBtn,SIGNAL(clicked()),this,SLOT(doPushBtn()));
     connect(pagePushBtn,SIGNAL(clicked()),this,SLOT(doPushBtn()));
     connect(printPushBtn,SIGNAL(clicked()),this,SLOT(doPushBtn()));
-
-
+    connect(textColorPushBtn,SIGNAL(clicked()),this,SLOT(doTextColor()));
 }
 
 CBuiltinDialog::~CBuiltinDialog() {}
+
 void CBuiltinDialog::doPushBtn()
 {
     QPushButton* btn = qobject_cast<QPushButton*>(sender());
@@ -40,21 +53,61 @@ void CBuiltinDialog::doPushBtn()
         QPalette palette = displayTextEdit->palette();
         const QColor& color=
             QColorDialog::getColor(palette.color(QPalette::Base),
-                                                     this,tr("設定背景顏色"));
+                                   this,tr("設定背景顏色"));
 
-            if(color.isValid())
-            {
-                palette.setColor(QPalette::Base,color);
-                displayTextEdit->setPalette(palette);
-            }
+        if(color.isValid())
+        {
+            palette.setColor(QPalette::Base,color);
+            displayTextEdit->setPalette(palette);
+        }
+    }
+    if(btn == errorPushBtn)
+    {
+        QErrorMessage box(this);
+        box.setWindowTitle(QStringLiteral("錯誤訊息盒"));
+        box.showMessage(QStringLiteral("錯誤訊息盒實例xx: "));
+        box.showMessage(QStringLiteral("錯誤訊息盒實例yy: "));
+        box.showMessage(QStringLiteral("錯誤訊息盒實例zz: "));
+        box.exec();
     }
     if(btn == filePushBtn)
     {
         QString fileName = QFileDialog::getOpenFileName(this,QStringLiteral("開啟檔案"),".",
                                                         QStringLiteral("任何檔案(*.*)"
-                                                            ";;文字檔(*.txt)"
-                                                            ";;XML檔(*.xml)"));
+                                                                       ";;文字檔(*.txt)"
+                                                                       ";;XML檔(*.xml)"));
         displayTextEdit->setText(fileName);
+    }
+    if(btn == fontPushBtn)
+    {
+        bool ok;
+        const QFont font = QFontDialog::getFont(&ok,
+                                                displayTextEdit->font(),
+                                                this,
+                                                QStringLiteral("字體對話盒"));
+        if (ok)
+            displayTextEdit->setFont(font);
+    }
+    if(btn == inputPushBtn)
+    {
+        bool ok;
+        QString text = QInputDialog::getText(this,
+                                             QStringLiteral("輸入對話盒"),
+                                             QStringLiteral("輸入文字"),
+                                             QLineEdit::Normal,
+                                             QDir::home().dirName(),
+                                             &ok);
+        if (ok && !text.isEmpty())
+            displayTextEdit->setText(text);
+    }
+    if(btn == pagePushBtn)
+    {
+        QPrinter printer(QPrinter::HighResolution);
+        QPageSetupDialog *dlg = new QPageSetupDialog(&printer,this);
+        dlg->setWindowTitle(QStringLiteral("頁面設定對話方塊"));
+        if (dlg->exec() == QDialog::Accepted)
+        {
+        }
     }
     if(btn == progressPushBtn)
     {
@@ -70,8 +123,26 @@ void CBuiltinDialog::doPushBtn()
                 break;
             qDebug() << i;
         }
-         progress.setValue(10000);
+        progress.setValue(10000);
     }
-
+    if(btn == printPushBtn)
+    {
+        QPrinter printer(QPrinter::HighResolution);
+        QPrintDialog dialog(&printer, this);
+        if (dialog.exec() != QDialog::Accepted)
+            return;
+    }
 }
+void CBuiltinDialog::doTextColor()
+{
+    QPalette palette = displayTextEdit->palette();
+    const QColor &color =
+        QColorDialog::getColor(palette.color(QPalette::Text),
+                               this, tr("設定文字顏色"));
 
+    if (color.isValid())
+    {
+        palette.setColor(QPalette::Text, color);
+        displayTextEdit->setPalette(palette);
+    }
+}
